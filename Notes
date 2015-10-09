@@ -1,0 +1,527 @@
+PowerShell Notes
+
+PowerShell V5.0
+
+Command prompt - REPL
+
+Invoke .NET libraries
+
+CmdLets
+
+e.g., Get-Process - look at the processes running
+
+> Get-Command Invoke* - wild card. Shows every command let available to run
+
+> Get-Help Get-Process - Help information for the cmdlet. You can write your own help. TODO - how?
+
+> $ps = Get-Process
+
+> $ps[0] | Get-member - gives you property information to inspect
+
+> $ps[0] | Get-member | out-gridview - outputs a UI gridview
+
+> Get-Process | where {$_.Handles -gt 700} | sort pm -desc - apply conditions like linq/lambda
+
+
+
+
+
+PS C:\PowerShellWorkshop> $a = 1..10
+PS C:\PowerShellWorkshop> $a | ForEach {$_ * 2} - Multiply each member of array  by 2
+
+PS C:\PowerShellWorkshop> $a | where {$_ % 2 -eq 0} |ForEach {$_ * 2} - apply conditions
+
+Open XML 
+
+> $xml = [xml] (Get-Content .\scripts\Products.xml)
+
+> $xml.Products.Product | Format-Table -Autosize  (Displays as a table format)
+
+
+Make a Rest Call 
+> Invoke-RestMethod http://blogs.msdn.com/b/powershell/atom.aspx | Select Title, Published
+
+PSReadLine
+
+
+CSV Files
+
+$csv = "Name, Age 'r'nJohn,10" | ConvertFrom-CSV
+
+JSON files
+
+Combine all formats
+
+> $data = $csv, $json, $xml
+
+Domain Specific Languages
+
+CSharp and PowerShell
+
+Inline CSharp code - TestClass.ps1
+
+Add-Type @"
+	public class Test
+	{
+		public int Add(int n1, int n2)
+		{
+			return n1 + n2 ;			
+		}
+	}
+"@
+> cat .\TestClass.ps1
+> $obj = New-Object Test
+
+Invoke c# methods
+> $obj.Add(5,6)
+
+Invoke dll
+> Add-Type -Path .\scripts\DLLs\demo.dll
+Create new object from the dll
+> $obj = New-Object demo.TestCode
+
+> $obj | Get-Member  (This will display the methods)
+
+> $methods = "Add", "Divide"
+
+> $methods | ForEach { "Calling the {0} method : {1}" -f $_, $obj.$_.Invoke(2,2)} --- Dynamic invocation
+
+
+Visual Studio integration
+
+In the project properties/Debug -> start external program -> Launch powershell to execute powershell script.
+
+Use debugger by creating breakpoints in the dll code as well as powershell script
+
+Create an excel doc
+> $xl = New-Object -ComObject excel.application
+
+PowerShell gallery - https://www.powershellgallery.com/
+
+Create Excel on the fly
+PS C:\PowerShellWorkshop> Get-Process | select company, PM, handles | export-excel '.\demo2.xlsx' -show
+
+Also include pivot tables. Refer to the GitHub page - https://github.com/dfinke/ImportExcel
+
+Excel 2013 - Flash extract
+
+** Programming by example **
+
+PS C:\PowerShellWorkshop> $data= @"
+>>> George Washington
+>>> "@ -split "'n"
+PS C:\PowerShellWorkshop> $data | Convert-String -Example "John Doe=J.Doe"
+G.Washington
+PS C:\PowerShellWorkshop>
+
+
+Version space algebra
+
+PS C:\PowerShellWorkshop> $data= @"
+>>> 123456789
+>>> "@ -split "'n"
+PS C:\PowerShellWorkshop> $data | Convert-String -Example "123456789=123-45-6789"
+G.Washington
+PS C:\PowerShellWorkshop>
+
+$targetdata = @'
+Aaron Crow, java clojure gcal
+BAD ENTRY
+Alvin Csdf, java ruby clojure
+'@
+
+
+TemplateContent = @'
+{First*:Aaron} {Last:Crow} {Skills:java cloj}
+{First*:Alvin}
+'@
+
+$targetdata | ConvertFrom-String -TemplateContent $TemplateContent
+
+
+New in PowerShell
+class Person {
+	$FirstName
+	$LastName
+}
+
+$person = [Person]::new()
+PS C:\PowerShellWorkshop> class Person {
+>>> $FirstName
+>>> $LastName
+>>> }
+PS C:\PowerShellWorkshop> $person = [Person]::new()
+PS C:\PowerShellWorkshop> $person.FirstName
+PS C:\PowerShellWorkshop> $person.FirstName = "Vamsi"
+PS C:\PowerShellWorkshop> $person.LastName = "Nellore"
+PS C:\PowerShellWorkshop> $person
+
+FirstName LastName
+--------- --------
+Vamsi     Nellore
+
+
+Casting to class
+
+$people = $(
+    @{FirstName="Glenn"; LastName="Frey"}
+	@{FirstName="Walder"; LastName="Frey"}
+    @{FirstName="Don"; LastName="Henley"}
+)
+
+$convertedPeople = [Person[]] $people
+
+$people.GetType()
+
+$convertedPeople.GetType()
+
+-- With custom constructor and a method
+class Person {
+	$FirstName
+	$LastName
+
+	Person ($FirstName, $LastName) {
+		$this.FirstName = $FirstName
+		$this.LastName = $LastName
+	}
+
+	[string] FullName() { return "{0}, {1}" -f $this.LastName, $this.FirstName}
+}
+
+$people.FullName()
+
+
+---- PowerShell Core ----
+
+
+PS C:\PowerShellWorkshop> $phrase = "Hello World`r`n"
+PS C:\PowerShellWorkshop> $phrase
+Hello World
+
+PS C:\PowerShellWorkshop>
+
+--String template
+PS C:\PowerShellWorkshop> $pet="Camel"
+PS C:\PowerShellWorkshop> $pet
+Camel
+PS C:\PowerShellWorkshop> $sign = "I love my $pet"
+PS C:\PowerShellWorkshop> $sign
+I love my Camel
+PS C:\PowerShellWorkshop>
+
+
+Content in single quote is not interpreted
+
+
+Escape single quote - ''
+Escape sequence - `t `n (back tick)
+
+
+PS C:\PowerShellWorkshop> $name = 'Xyz'
+PS C:\PowerShellWorkshop> $address = '123 Main St'
+PS C:\PowerShellWorkshop> "$name lives at $address"
+Xyz lives at 123 Main St
+PS C:\PowerShellWorkshop>
+
+PS C:\PowerShellWorkshop> [System.Convert]::ToString(42,2)
+101010
+PS C:\PowerShellWorkshop>
+PS C:\PowerShellWorkshop>
+
+#Shortcuts
+
+PS C:\PowerShellWorkshop> 1kb
+1024
+PS C:\PowerShellWorkshop> 1gb
+1073741824
+PS C:\PowerShellWorkshop>
+
+-- Create keys in a hashtable on the fly
+
+---Script blocks
+PS C:\PowerShellWorkshop> $scriptblock = {param($x) $x*$x}
+PS C:\PowerShellWorkshop> & $scriptblock 5
+25
+PS C:\PowerShellWorkshop>
+
+
+-- Create variables from an array
+PS C:\PowerShellWorkshop> $myHome = "couch", "chair", "table"
+PS C:\PowerShellWorkshop> $a, $b, $c = $myHome
+PS C:\PowerShellWorkshop> $a
+couch
+PS C:\PowerShellWorkshop>
+
+
+-- Build array programmatically
+PS C:\PowerShellWorkshop> $myHome = @()
+PS C:\PowerShellWorkshop> $myHome += "couch"
+PS C:\PowerShellWorkshop> $myHome += "chair"
+PS C:\PowerShellWorkshop> $myHome += "tv"
+PS C:\PowerShellWorkshop> $myHome
+couch
+chair
+tv
+PS C:\PowerShellWorkshop>
+
+-- Using New-Object  
+PS C:\PowerShellWorkshop> $myHome = New-Object object[] 4
+PS C:\PowerShellWorkshop> $myHome
+PS C:\PowerShellWorkshop> $myHome[0] = "couch"
+PS C:\PowerShellWorkshop> $myHome[1] = "couch1"
+PS C:\PowerShellWorkshop> $myHome
+couch
+couch1
+PS C:\PowerShellWorkshop>
+
+PS C:\PowerShellWorkshop> $myHome[5]="tv"
+Index was outside the bounds of the array.
+At line:1 char:1
++ $myHome[5]="tv"
++ ~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (:) [], IndexOutOfRangeException
+    + FullyQualifiedErrorId : System.IndexOutOfRangeException
+
+PS C:\PowerShellWorkshop>
+
+
+
+Create ArrayList 
+
+PS C:\PowerShellWorkshop> [System.Collections.ArrayList] $c = 1,2,3
+PS C:\PowerShellWorkshop> $c
+1
+2
+3
+PS C:\PowerShellWorkshop>
+
+Hashtables
+
+Get-Content
+
+Import-Csv
+
+Import-Csv grades.txt -Header name, grade -Delimiter ' '
+
+**** Apply computations ****
+Import-Csv grades.txt -Header name, grade -Delimiter ' ' | Measure Grade -Average -Sum -Max
+
+*** History of commands - h
+
+
+PS C:\PowerShellWorkshop> dir
+
+
+    Directory: C:\PowerShellWorkshop
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-a----        10/9/2015  11:21 AM           6712 demo.xlsx
+-a----        10/9/2015  11:22 AM           5206 demo2.xlsx
+-a----        10/9/2015   1:21 PM           6997 Notes
+-a----        10/9/2015  11:49 AM              0 PowerShellTestScript.ps1
+-a----        10/9/2015   9:50 AM              0 rss.ps1
+
+
+PS C:\PowerShellWorkshop> (dir).FullName
+C:\PowerShellWorkshop\demo.xlsx
+C:\PowerShellWorkshop\demo2.xlsx
+C:\PowerShellWorkshop\Notes
+C:\PowerShellWorkshop\PowerShellTestScript.ps1
+C:\PowerShellWorkshop\rss.ps1
+PS C:\PowerShellWorkshop>
+
+
+---Apply a script using multiple files as input
+PS C:\PowerShellWorkshop> (dir).FullName | ForEach {.\GetGrades2.ps1 $_}
+
+
+----Launch browser
+PS C:\PowerShellWorkshop> start http://www.google.com
+PS C:\PowerShellWorkshop> function showGoogle { start http://www.google.com }
+PS C:\PowerShellWorkshop> showGoogle
+
+--- PowerShell profile
+
+--- Array membership check
+
+PS C:\PowerShellWorkshop> 'a','b','c' -eq 'c' # returns member if exists
+c
+PS C:\PowerShellWorkshop> 'a','b','c' -eq 3 # returns nothing if not exists
+PS C:\PowerShellWorkshop>
+PS C:\PowerShellWorkshop>
+PS C:\PowerShellWorkshop> $array = echo tom harry jane jim
+PS C:\PowerShellWorkshop> $array -contains 'tom'
+True
+PS C:\PowerShellWorkshop>
+
+-- Pattern matching
+PS C:\PowerShellWorkshop> $array -match 'a'
+harry
+jane
+PS C:\PowerShellWorkshop> $array -match 'h*y'
+harry
+PS C:\PowerShellWorkshop>
+
+-- String replace 
+PS C:\PowerShellWorkshop> "-sometext!" -replace '-|!','zz'
+zzsometextzz
+PS C:\PowerShellWorkshop>
+
+
+PS C:\PowerShellWorkshop> "a b c d" -split ' '
+a
+b
+c
+d
+PS C:\PowerShellWorkshop> ("http://www.google.com" -split '/')[-1]
+www.google.com
+PS C:\PowerShellWorkshop> ("http://www.google.com" -split '/')[0]
+http:
+PS C:\PowerShellWorkshop>
+
+--- join operator
+PS C:\PowerShellWorkshop> $array = echo tom harry joe jill
+PS C:\PowerShellWorkshop> $array -join ','
+tom,harry,joe,jill
+PS C:\PowerShellWorkshop>
+
+
+--- Type checking
+PS C:\PowerShellWorkshop> $s = "Hello"
+PS C:\PowerShellWorkshop> $s -is [String]
+True
+PS C:\PowerShellWorkshop>
+
+
+
+--- Include a script in another script
+
+. .\test1.ps1
+
+--- Look up static methods
+
+
+PS C:\PowerShellWorkshop> [System.Math] | Get-Member -static
+
+-- Redirects
+get-date >.\out.txt
+
+PS C:\PowerShellWorkshop> function sqr($x) {$x * $x}
+PS C:\PowerShellWorkshop> sqr 2
+4
+PS C:\PowerShellWorkshop> sqr 5
+25
+PS C:\PowerShellWorkshop> 6..10 | % { sqr $_ }
+36
+49
+64
+81
+100
+PS C:\PowerShellWorkshop>
+PS C:\PowerShellWorkshop> function sqr($x) {$x * $x}
+PS C:\PowerShellWorkshop> sqr(2)
+4
+PS C:\PowerShellWorkshop> sqr 2
+4
+PS C:\PowerShellWorkshop> sqr 5
+25
+PS C:\PowerShellWorkshop> 6..10 | % { sqr $_ }
+36
+49
+64
+81
+100
+PS C:\PowerShellWorkshop> 6..10 | sqr $_
+PS C:\PowerShellWorkshop> 6..10 | % { sqr $_ }
+36
+49
+64
+81
+100
+PS C:\PowerShellWorkshop> function Add-Name {param($First, $Last) $First + " " + $Last }
+PS C:\PowerShellWorkshop> Add-Name John Doe
+John Doe
+PS C:\PowerShellWorkshop> Add-Name -Last John Doe
+Doe John
+PS C:\PowerShellWorkshop> Add-Name -Last John Doe # parameter binding
+Doe John
+PS C:\PowerShellWorkshop> function add($x, $y) { $x + $y }
+PS C:\PowerShellWorkshop> add 1 2
+3
+PS C:\PowerShellWorkshop> add "1" "2"
+12
+PS C:\PowerShellWorkshop>
+PS C:\PowerShellWorkshop> function add([int]$x, [int]$y) { $x + $y } # cast to int
+PS C:\PowerShellWorkshop> add "1" "2"
+3
+PS C:\PowerShellWorkshop>
+PS C:\PowerShellWorkshop> function add([int]$x=1, [int]$y=1) { $x + $y } # Default parameter values
+
+PS C:\PowerShellWorkshop> add
+2
+
+--- day of week implementation
+PS C:\PowerShellWorkshop> function dow([datetime]$d=$(get-date)) { $d.dayofweek }
+PS C:\PowerShellWorkshop> dow
+Friday
+PS C:\PowerShellWorkshop> dow 3/15
+Sunday
+PS C:\PowerShellWorkshop>
+
+-- Mandatory parameters
+PS C:\PowerShellWorkshop> function Add-Name {param([Parameter(Mandatory)]$First, $Last) $First + " " + $Last
+>>> }
+PS C:\PowerShellWorkshop> Add-Name -Last Doe
+
+cmdlet Add-Name at command pipeline position 1
+Supply values for the following parameters:
+First: John
+John Doe
+PS C:\PowerShellWorkshop>
+
+
+-- Validate set 
+
+PS C:\PowerShellWorkshop> function Add-State {param([ValidateSet('NY','NJ','PA')] $State) $State}
+PS C:\PowerShellWorkshop> Add-State DE
+Add-State : Cannot validate argument on parameter 'State'. The argument "DE" does not belong to the set "NY,NJ,PA"
+specified by the ValidateSet attribute. Supply an argument that is in the set and then try the command again.
+At line:1 char:11
++ Add-State DE
++           ~~
+    + CategoryInfo          : InvalidData: (:) [Add-State], ParameterBindingValidationException
+    + FullyQualifiedErrorId : ParameterArgumentValidationError,Add-State
+
+PS C:\PowerShellWorkshop> Add-State NJ
+NJ
+PS C:\PowerShellWorkshop>
+
+-- Switch
+
+-- Invoke web request
+iwr
+
+Desired State Configuration
+
+
+DSC Wave Kits
+Push Model
+
+Pull Model
+
+Remoting
+Enable-PSRemoting
+Invoke-Command {1+1}
+
+
+-- Invoke a command and get results from all the computers listed in servers.txt
+
+Invoke-Command -ComputerName (cat servers.txt) {@{bios=gwmi win32_bios; disk = gcim win32_logicaldisk}}
+
+
+
+-- PowerShell Build Automation Tool
+https://github.com/psake/psake
+
