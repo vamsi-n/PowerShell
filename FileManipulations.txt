@@ -1,0 +1,23 @@
+Find and Count 
+
+> Select-String -Path '.\*.csv' -Pattern ",  INC." | Measure-Object
+
+Select the first object
+
+> Select-Object -first 1
+
+Find and Replace
+
+> $csvFiles = Get-ChildItem . *.csv -rec
+foreach ($file in $csvFiles)
+{
+    (Get-Content $file.PSPath) |
+    Foreach-Object { $_ -replace ", INC", " INC" } |
+    Set-Content $file.PSPath
+}
+
+Pipe to file 
+> Get-Process | Out-File c:\scripts\test.txt
+
+Remove word wrap (Set-Content)
+>Select-String -Path 'FactSetLoad2303.log' -Pattern "Cannot Load" | Set-Content 2303Warnings.txt
